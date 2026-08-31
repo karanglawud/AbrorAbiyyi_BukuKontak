@@ -12,9 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Buku Kontak',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: '/',
       routes: {
         '/': (context) => const HalamanBeranda(),
@@ -34,9 +32,10 @@ class HalamanBeranda extends StatefulWidget {
 }
 
 // Tambahkan "with SingleTickerProviderStateMixin"
-class _HalamanBerandaState extends State<HalamanBeranda> with SingleTickerProviderStateMixin {
+class _HalamanBerandaState extends State<HalamanBeranda>
+    with SingleTickerProviderStateMixin {
   List<Map<String, String>> contacts = [];
-  
+
   // Buat TabController manual
   late TabController _tabController;
 
@@ -72,7 +71,8 @@ class _HalamanBerandaState extends State<HalamanBeranda> with SingleTickerProvid
           ],
         ),
       ),
-      drawer: Drawer( // Tidak perlu Builder lagi
+      drawer: Drawer(
+        // Tidak perlu Builder lagi
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -87,7 +87,7 @@ class _HalamanBerandaState extends State<HalamanBeranda> with SingleTickerProvid
               leading: const Icon(Icons.contact_page),
               title: const Text('Kontak'),
               onTap: () {
-                Navigator.pop(context); 
+                Navigator.pop(context);
                 _tabController.animateTo(0); // Pindah ke Tab Kontak
               },
             ),
@@ -113,7 +113,7 @@ class _HalamanBerandaState extends State<HalamanBeranda> with SingleTickerProvid
               leading: const Icon(Icons.star),
               title: const Text('Favorit'),
               onTap: () {
-                Navigator.pop(context); 
+                Navigator.pop(context);
                 _tabController.animateTo(1); // Pindah ke Tab Favorit
               },
             ),
@@ -138,7 +138,10 @@ class _HalamanBerandaState extends State<HalamanBeranda> with SingleTickerProvid
                   itemCount: contacts.length,
                   itemBuilder: (context, index) {
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       child: ListTile(
                         leading: CircleAvatar(
                           child: Text(
@@ -147,14 +150,32 @@ class _HalamanBerandaState extends State<HalamanBeranda> with SingleTickerProvid
                           ),
                         ),
                         title: Text(contacts[index]['nama']!),
-                        subtitle: Text('${contacts[index]['email']!}\n${contacts[index]['phone']!}'),
+                        subtitle: Text(
+                          '${contacts[index]['email']!}\n${contacts[index]['phone']!}',
+                        ),
                         isThreeLine: true,
                       ),
                     );
                   },
                 ),
-          // Isi Tab 2: Favorit
-          const Center(child: Text('Belum ada kontak favorit.')),
+          ListView(
+            children: const [
+              Card(
+                margin: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    child: Text(
+                      'A',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  title: Text('Albanie Setyawan'),
+                  subtitle: Text('albanisetyawan@gmail.com\n0895422599631'),
+                  isThreeLine: true,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -280,7 +301,7 @@ class HalamanTentang extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Text(
-              'Abror Abiyyi', 
+              'Abror Abiyyi',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
