@@ -4,6 +4,37 @@ void main() {
   runApp(const MyApp());
 }
 
+// ==================== MODEL KONTAK (JSON & NULL SAFETY) ====================
+class Kontak {
+  final String nama;
+  final String email;
+  final String phone;
+
+  Kontak({
+    required this.nama,
+    required this.email,
+    required this.phone,
+  });
+
+  // Factory constructor untuk mapping JSON (Map<String, dynamic>) ke Object Kontak
+  factory Kontak.fromJson(Map<String, dynamic> json) {
+    return Kontak(
+      nama: json['nama'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'] ?? '',
+    );
+  }
+
+  // Mengubah Object Kontak kembali ke format Map / JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'nama': nama,
+      'email': email,
+      'phone': phone,
+    };
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -12,7 +43,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Buku Kontak',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
       initialRoute: '/',
       routes: {
         '/': (context) => const HalamanBeranda(),
@@ -31,18 +64,17 @@ class HalamanBeranda extends StatefulWidget {
   State<HalamanBeranda> createState() => _HalamanBerandaState();
 }
 
-// Tambahkan "with SingleTickerProviderStateMixin"
 class _HalamanBerandaState extends State<HalamanBeranda>
     with SingleTickerProviderStateMixin {
-  List<Map<String, String>> contacts = [];
+  // Menggunakan List<Kontak> berorientasi objek
+  List<Kontak> contacts = [];
 
-  // Buat TabController manual
+  // TabController manual
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    // Inisialisasi controller untuk 2 tab
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -52,16 +84,30 @@ class _HalamanBerandaState extends State<HalamanBeranda>
     super.dispose();
   }
 
+  // Fungsi navigasi asinkron (Future, Async, Await)
+  Future<void> _navigasiTambahKontak() async {
+    final result = await Navigator.pushNamed(context, '/tambah');
+    if (result != null) {
+      final Kontak kontakBaru = result is Kontak
+          ? result
+          : Kontak.fromJson(Map<String, dynamic>.from(result as Map));
+      setState(() {
+        contacts.add(kontakBaru);
+      });
+      // Berpindah otomatis ke tab Kontak (indeks 0) jika sedang di tab lain
+      _tabController.animateTo(0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Hapus DefaultTabController, langsung return Scaffold
     return Scaffold(
       appBar: AppBar(
         title: const Text('BUKU KONTAK'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         bottom: TabBar(
-          controller: _tabController, // Hubungkan controller ke TabBar
+          controller: _tabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.purple,
@@ -72,7 +118,6 @@ class _HalamanBerandaState extends State<HalamanBeranda>
         ),
       ),
       drawer: Drawer(
-        // Tidak perlu Builder lagi
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -88,7 +133,7 @@ class _HalamanBerandaState extends State<HalamanBeranda>
               title: const Text('Kontak'),
               onTap: () {
                 Navigator.pop(context);
-                _tabController.animateTo(0); // Pindah ke Tab Kontak
+                _tabController.animateTo(0);
               },
             ),
             ListTile(
@@ -96,17 +141,7 @@ class _HalamanBerandaState extends State<HalamanBeranda>
               title: const Text('Tambah Kontak'),
               onTap: () async {
                 Navigator.pop(context);
-                final result = await Navigator.pushNamed(context, '/tambah');
-                if (result != null) {
-                  final data = result as Map;
-                  setState(() {
-                    contacts.add({
-                      'nama': data['nama'].toString(),
-                      'email': data['email'].toString(),
-                      'phone': data['phone'].toString(),
-                    });
-                  });
-                }
+                await _navigasiTambahKontak();
               },
             ),
             ListTile(
@@ -114,7 +149,7 @@ class _HalamanBerandaState extends State<HalamanBeranda>
               title: const Text('Favorit'),
               onTap: () {
                 Navigator.pop(context);
-                _tabController.animateTo(1); // Pindah ke Tab Favorit
+                _tabController.animateTo(1);
               },
             ),
             ListTile(
@@ -129,7 +164,7 @@ class _HalamanBerandaState extends State<HalamanBeranda>
         ),
       ),
       body: TabBarView(
-        controller: _tabController, // Hubungkan controller ke TabBarView
+        controller: _tabController,
         children: [
           // Isi Tab 1: Kontak
           contacts.isEmpty
@@ -137,6 +172,7 @@ class _HalamanBerandaState extends State<HalamanBeranda>
               : ListView.builder(
                   itemCount: contacts.length,
                   itemBuilder: (context, index) {
+                    final kontak = contacts[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -145,23 +181,27 @@ class _HalamanBerandaState extends State<HalamanBeranda>
                       child: ListTile(
                         leading: CircleAvatar(
                           child: Text(
-                            contacts[index]['nama']![0].toUpperCase(),
+                            kontak.nama.isNotEmpty
+                                ? kontak.nama[0].toUpperCase()
+                                : '?',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
-                        title: Text(contacts[index]['nama']!),
-                        subtitle: Text(
-                          '${contacts[index]['email']!}\n${contacts[index]['phone']!}',
-                        ),
+                        title: Text(kontak.nama),
+                        subtitle: Text('${kontak.email}\n${kontak.phone}'),
                         isThreeLine: true,
                       ),
                     );
                   },
                 ),
+          // Isi Tab 2: Favorit
           ListView(
             children: const [
               Card(
-                margin: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                margin: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 child: ListTile(
                   leading: CircleAvatar(
                     child: Text(
@@ -179,19 +219,7 @@ class _HalamanBerandaState extends State<HalamanBeranda>
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.pushNamed(context, '/tambah');
-          if (result != null) {
-            final data = result as Map;
-            setState(() {
-              contacts.add({
-                'nama': data['nama'].toString(),
-                'email': data['email'].toString(),
-                'phone': data['phone'].toString(),
-              });
-            });
-          }
-        },
+        onPressed: _navigasiTambahKontak,
         backgroundColor: Colors.purple.shade100,
         foregroundColor: Colors.black,
         child: const Icon(Icons.add),
@@ -209,6 +237,9 @@ class HalamanTambahKontak extends StatefulWidget {
 }
 
 class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
+  // GlobalKey untuk validasi FormState sesuai modul
+  final _formKey = GlobalKey<FormState>();
+
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
@@ -229,50 +260,113 @@ class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Nama Lengkap'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: phoneController,
-              decoration: const InputDecoration(labelText: 'No Handphone'),
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                // Kirim data kembali ke halaman sebelumnya
-                Navigator.pop(context, {
-                  'nama': nameController.text,
-                  'email': emailController.text,
-                  'phone': phoneController.text,
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple.shade50,
-                foregroundColor: Colors.purple,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. Validasi Nama Lengkap
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Lengkap',
+                  hintText: 'Masukkan nama kontak',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama wajib diisi';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Nama minimal 3 karakter';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // 2. Validasi Email
+              TextFormField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'contoh@domain.com',
+                  prefixIcon: Icon(Icons.email),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Email wajib diisi';
+                  }
+                  // Validasi format email harus ada @ dan domain
+                  final emailRegex =
+                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!emailRegex.hasMatch(value.trim())) {
+                    return 'Format email tidak valid (harus mengandung @ dan domain)';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // 3. Validasi No Handphone
+              TextFormField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'No Handphone',
+                  hintText: '08123456789',
+                  prefixIcon: Icon(Icons.phone),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'No Handphone wajib diisi';
+                  }
+                  if (!RegExp(r'^[0-9]+$').hasMatch(value.trim())) {
+                    return 'No Handphone hanya boleh berisi angka';
+                  }
+                  if (value.trim().length < 10) {
+                    return 'No Handphone minimal 10 angka';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 28),
+
+              // Tombol Simpan dengan Pengecekan FormState
+              ElevatedButton(
+                onPressed: () {
+                  // Validasi form terlebih dahulu sebelum kirim data
+                  if (_formKey.currentState!.validate()) {
+                    final kontakBaru = Kontak(
+                      nama: nameController.text.trim(),
+                      email: emailController.text.trim(),
+                      phone: phoneController.text.trim(),
+                    );
+                    // Kirim object kontak kembali ke halaman beranda
+                    Navigator.pop(context, kontakBaru);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Simpan',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Text('Simpan'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
