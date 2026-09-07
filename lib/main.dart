@@ -261,6 +261,21 @@ class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
     super.dispose();
   }
 
+  // Fungsi untuk menyimpan kontak dan kembali ke halaman sebelumnya
+  void simpanKontak() {
+    final kontakBaru = Kontak(
+      nama: nameController.text.trim(),
+      email: emailController.text.trim(),
+      phone: phoneController.text.trim(),
+      // Jika dikosongkan, nilainya adalah null (Null Safety)
+      kategori: categoryController.text.trim().isEmpty
+          ? null
+          : categoryController.text.trim(),
+    );
+    // Kirim object kontak kembali ke halaman beranda
+    Navigator.pop(context, kontakBaru);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -360,22 +375,11 @@ class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
               ),
               const SizedBox(height: 28),
 
-              // Tombol Simpan dengan Pengecekan FormState
+              // Tombol Simpan dengan Pengecekan FormState sebelum memanggil simpanKontak()
               ElevatedButton(
                 onPressed: () {
-                  // Validasi form terlebih dahulu sebelum kirim data
                   if (_formKey.currentState!.validate()) {
-                    final kontakBaru = Kontak(
-                      nama: nameController.text.trim(),
-                      email: emailController.text.trim(),
-                      phone: phoneController.text.trim(),
-                      // Jika dikosongkan, nilainya adalah null (Null Safety)
-                      kategori: categoryController.text.trim().isEmpty
-                          ? null
-                          : categoryController.text.trim(),
-                    );
-                    // Kirim object kontak kembali ke halaman beranda
-                    Navigator.pop(context, kontakBaru);
+                    simpanKontak();
                   }
                 },
                 style: ElevatedButton.styleFrom(
