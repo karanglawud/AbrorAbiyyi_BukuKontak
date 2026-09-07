@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -74,6 +75,10 @@ class _HalamanBerandaState extends State<HalamanBeranda>
   // TabController manual
   late TabController _tabController;
 
+  // StreamController untuk pencarian real-time (Tugas 6)
+  final StreamController<String> _searchController =
+      StreamController<String>.broadcast();
+
   @override
   void initState() {
     super.initState();
@@ -82,6 +87,8 @@ class _HalamanBerandaState extends State<HalamanBeranda>
 
   @override
   void dispose() {
+    // Menutup StreamController untuk mencegah memory leak sesuai Tugas 6
+    _searchController.close();
     _tabController.dispose();
     super.dispose();
   }
@@ -168,37 +175,91 @@ class _HalamanBerandaState extends State<HalamanBeranda>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Isi Tab 1: Kontak
-          contacts.isEmpty
-              ? const Center(child: Text('Belum ada kontak'))
-              : ListView.builder(
-                  itemCount: contacts.length,
-                  itemBuilder: (context, index) {
-                    final kontak = contacts[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(
-                            kontak.nama.isNotEmpty
-                                ? kontak.nama[0].toUpperCase()
-                                : '?',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+          // Isi Tab 1: Kontak dengan Pencarian Real-time (StreamBuilder)
+          Column(
+            children: [
+              // 1. TextField pencarian di bagian atas tab Kontak
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Cari berdasarkan nama atau kategori...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onChanged: (teks) {
+                    // Mengirim teks ke stream setiap kali berubah
+                    _searchController.add(teks);
+                  },
+                ),
+              ),
+              // 2. StreamBuilder untuk mendengarkan hasil pencarian real-time
+              Expanded(
+                child: StreamBuilder<String>(
+                  stream: _searchController.stream,
+                  initialData: '',
+                  builder: (context, snapshot) {
+                    final query = (snapshot.data ?? '').toLowerCase().trim();
+
+                    // Filter list kontak berdasarkan nama ATAU kategori (.toLowerCase)
+                    final filteredContacts = contacts.where((kontak) {
+                      final namaCocok =
+                          kontak.nama.toLowerCase().contains(query);
+                      final kategoriCocok = (kontak.kategori ?? '')
+                          .toLowerCase()
+                          .contains(query);
+                      return namaCocok || kategoriCocok;
+                    }).toList();
+
+                    if (contacts.isEmpty) {
+                      return const Center(child: Text('Belum ada kontak'));
+                    }
+
+                    if (filteredContacts.isEmpty) {
+                      return const Center(
+                          child: Text('Kontak tidak ditemukan'));
+                    }
+
+                    return ListView.builder(
+                      itemCount: filteredContacts.length,
+                      itemBuilder: (context, index) {
+                        final kontak = filteredContacts[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
                           ),
-                        ),
-                        title: Text(kontak.nama),
-                        // Menampilkan kategori dengan null-aware operator (??) sesuai Tugas 4
-                        subtitle: Text(
-                          '${kontak.email}\n${kontak.phone}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
-                        ),
-                        isThreeLine: true,
-                      ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              child: Text(
+                                kontak.nama.isNotEmpty
+                                    ? kontak.nama[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            title: Text(kontak.nama),
+                            // Menampilkan kategori dengan null-aware operator (??)
+                            subtitle: Text(
+                              '${kontak.email}\n${kontak.phone}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
+                            ),
+                            isThreeLine: true,
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
+              ),
+            ],
+          ),
           // Isi Tab 2: Favorit
           ListView(
             children: const [
@@ -250,7 +311,7 @@ class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController categoryController = TextEditingController(); // Controller kategori (Tugas 4)
+  final TextEditingController categoryController = TextEditingController();
 
   @override
   void dispose() {
