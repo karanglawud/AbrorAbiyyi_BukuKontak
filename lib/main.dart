@@ -9,8 +9,14 @@ class Kontak {
   final String nama;
   final String email;
   final String phone;
+  final String? kategori; // Nullable (String?) sesuai Tugas 4
 
-  Kontak({required this.nama, required this.email, required this.phone});
+  Kontak({
+    required this.nama,
+    required this.email,
+    required this.phone,
+    this.kategori, // Kategori bersifat opsional
+  });
 
   // Factory constructor untuk mapping JSON (Map<String, dynamic>) ke Object Kontak
   factory Kontak.fromJson(Map<String, dynamic> json) {
@@ -18,12 +24,18 @@ class Kontak {
       nama: json['nama'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'] ?? '',
+      kategori: json['kategori'],
     );
   }
 
   // Mengubah Object Kontak kembali ke format Map / JSON
   Map<String, dynamic> toJson() {
-    return {'nama': nama, 'email': email, 'phone': phone};
+    return {
+      'nama': nama,
+      'email': email,
+      'phone': phone,
+      'kategori': kategori,
+    };
   }
 }
 
@@ -46,7 +58,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-//wlee
 // ==================== HALAMAN BERANDA ====================
 class HalamanBeranda extends StatefulWidget {
   const HalamanBeranda({super.key});
@@ -179,14 +190,39 @@ class _HalamanBerandaState extends State<HalamanBeranda>
                           ),
                         ),
                         title: Text(kontak.nama),
-                        subtitle: Text('${kontak.email}\n${kontak.phone}'),
+                        // Menampilkan kategori dengan null-aware operator (??) sesuai Tugas 4
+                        subtitle: Text(
+                          '${kontak.email}\n${kontak.phone}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
+                        ),
                         isThreeLine: true,
                       ),
                     );
                   },
                 ),
           // Isi Tab 2: Favorit
-          const Center(child: Text('Belum ada kontak favorit.')),
+          ListView(
+            children: const [
+              Card(
+                margin: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    child: Text(
+                      'A',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  title: Text('Albanie Setyawan'),
+                  subtitle: Text(
+                    'albanisetyawan@gmail.com\n0895422599631\nKategori: Teman',
+                  ),
+                  isThreeLine: true,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -214,12 +250,14 @@ class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController categoryController = TextEditingController(); // Controller kategori (Tugas 4)
 
   @override
   void dispose() {
     nameController.dispose();
     emailController.dispose();
     phoneController.dispose();
+    categoryController.dispose();
     super.dispose();
   }
 
@@ -308,6 +346,18 @@ class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+
+              // 4. Input Kategori (Opsional - Tugas 4)
+              TextFormField(
+                controller: categoryController,
+                decoration: const InputDecoration(
+                  labelText: 'Kategori (Opsional)',
+                  hintText: 'Contoh: Keluarga, Teman, Kerja',
+                  prefixIcon: Icon(Icons.category),
+                  border: OutlineInputBorder(),
+                ),
+              ),
               const SizedBox(height: 28),
 
               // Tombol Simpan dengan Pengecekan FormState
@@ -319,6 +369,10 @@ class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
                       nama: nameController.text.trim(),
                       email: emailController.text.trim(),
                       phone: phoneController.text.trim(),
+                      // Jika dikosongkan, nilainya adalah null (Null Safety)
+                      kategori: categoryController.text.trim().isEmpty
+                          ? null
+                          : categoryController.text.trim(),
                     );
                     // Kirim object kontak kembali ke halaman beranda
                     Navigator.pop(context, kontakBaru);
