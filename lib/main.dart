@@ -10,11 +10,7 @@ class Kontak {
   final String email;
   final String phone;
 
-  Kontak({
-    required this.nama,
-    required this.email,
-    required this.phone,
-  });
+  Kontak({required this.nama, required this.email, required this.phone});
 
   // Factory constructor untuk mapping JSON (Map<String, dynamic>) ke Object Kontak
   factory Kontak.fromJson(Map<String, dynamic> json) {
@@ -27,11 +23,7 @@ class Kontak {
 
   // Mengubah Object Kontak kembali ke format Map / JSON
   Map<String, dynamic> toJson() {
-    return {
-      'nama': nama,
-      'email': email,
-      'phone': phone,
-    };
+    return {'nama': nama, 'email': email, 'phone': phone};
   }
 }
 
@@ -43,9 +35,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Buku Kontak',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: '/',
       routes: {
         '/': (context) => const HalamanBeranda(),
@@ -56,6 +46,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+//wlee
 // ==================== HALAMAN BERANDA ====================
 class HalamanBeranda extends StatefulWidget {
   const HalamanBeranda({super.key});
@@ -195,27 +186,7 @@ class _HalamanBerandaState extends State<HalamanBeranda>
                   },
                 ),
           // Isi Tab 2: Favorit
-          ListView(
-            children: const [
-              Card(
-                margin: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text(
-                      'A',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  title: Text('Albanie Setyawan'),
-                  subtitle: Text('albanisetyawan@gmail.com\n0895422599631'),
-                  isThreeLine: true,
-                ),
-              ),
-            ],
-          ),
+          const Center(child: Text('Belum ada kontak favorit.')),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -303,8 +274,9 @@ class _HalamanTambahKontakState extends State<HalamanTambahKontak> {
                     return 'Email wajib diisi';
                   }
                   // Validasi format email harus ada @ dan domain
-                  final emailRegex =
-                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  final emailRegex = RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  );
                   if (!emailRegex.hasMatch(value.trim())) {
                     return 'Format email tidak valid (harus mengandung @ dan domain)';
                   }
